@@ -5,19 +5,21 @@ using TMPro;
 public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public AudioClip hitSound; // Drag your hit sound here
-    public AudioSource audioSource; // Drag your AudioSource here
+    public AudioClip hitSound; 
+    public AudioSource audioSource; 
+    private SpriteRenderer sr;
 
     public GameObject enemyPrefab;
     public float spawnInterval = 2f;
     public float enemyFallSpeed = 2f;
 
-    public TextMeshProUGUI gameOverText; // Drag your TMP Text here
+    public TextMeshProUGUI gameOverText; 
 
     private bool gameOver = false;
 
     void Start()
     {
+        sr = GetComponent<SpriteRenderer>();
         InvokeRepeating(nameof(SpawnEnemy), 1f, spawnInterval);
 
         if (gameOverText != null)
@@ -41,10 +43,16 @@ public class Player : MonoBehaviour
 
     void MovePlayer()
     {
+        
         float move = Input.GetAxisRaw("Horizontal");
         transform.Translate(Vector2.right * move * moveSpeed * Time.deltaTime);
 
-        // Optional wrap
+
+            if (move > 0)
+                sr.flipX = false;
+            else if (move < 0)
+                sr.flipX = true;
+
         Vector3 pos = transform.position;
         float screenWidth = Camera.main.orthographicSize * Camera.main.aspect;
 
@@ -70,7 +78,6 @@ public class Player : MonoBehaviour
         );
 
         GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
-
         enemy.tag = "Enemy";
 
         EnemyMover mover = enemy.AddComponent<EnemyMover>();
@@ -89,30 +96,15 @@ public class Player : MonoBehaviour
 
             CancelInvoke(nameof(SpawnEnemy));
 
-            // Stop all existing enemies
-            foreach (var m in FindObjectsByType<EnemyMover>(FindObjectsSortMode.None))
+            foreach (var m in FindObjectsByType<EnemyMover>(FindObjectsInactive.Exclude))
             {
                 m.enabled = false;
             }
+            
+            FindFirstObjectByType<ScoreManager>()?.stopScoring();
 
             if (gameOverText != null)
                 gameOverText.gameObject.SetActive(true);
         }
     }
 }
-
-public class EnemyMover : MonoBehaviour
-{
-    public float speed = 2f;
-
-    void Update()
-    {
-        transform.Translate(Vector2.down * speed * Time.deltaTime);
-
-        if (transform.position.y < -Camera.main.orthographicSize - 2f)
-        {
-            Destroy(gameObject);
-        }
-    }
-}
-
