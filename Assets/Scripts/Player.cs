@@ -17,21 +17,26 @@ public class Player : MonoBehaviour
     public float enemyFallSpeed = 2f;
 
     public TextMeshProUGUI gameOverText; 
+    public GameObject restartButton; // Restart button ka reference
     private bool gameOver = false;
+    private float mobileMoveInput = 0f; // Mobile buttons ke liye input variable
 
-   void Start()
-{
-    gameOver = false; // Yeh ensure karega ki restart hote hi game over state reset ho jaye
-    
-    sr = GetComponent<SpriteRenderer>();
-    InvokeRepeating(nameof(SpawnEnemy), 1f, spawnInterval);
-
-    if (gameOverText != null)
-        gameOverText.gameObject.SetActive(false);
+    void Start()
+    {
+        gameOver = false; 
         
-    if (coinTextUI != null)
-        coinTextUI.text = "Coins: 0";
-}
+        sr = GetComponent<SpriteRenderer>();
+        InvokeRepeating(nameof(SpawnEnemy), 1f, spawnInterval);
+
+        if (gameOverText != null)
+            gameOverText.gameObject.SetActive(false);
+
+        if (restartButton != null)
+            restartButton.SetActive(false); // Game shuru hote hi restart button hide rahega
+            
+        if (coinTextUI != null)
+            coinTextUI.text = "Coins: 0";
+    }
 
     void Update()
     {
@@ -41,9 +46,10 @@ public class Player : MonoBehaviour
         }
         else
         {
+            // Keyboard shortcut 'R' ya PC ke liye
             if (Input.GetKeyDown(KeyCode.R))
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                RestartGame();
             }
         }
     }
@@ -51,6 +57,11 @@ public class Player : MonoBehaviour
     void MovePlayer()
     {
         float move = Input.GetAxisRaw("Horizontal");
+        if (move == 0f)
+        {
+            move = mobileMoveInput; // Agar keyboard nahi daba, toh mobile touch input lega
+        }
+
         transform.Translate(Vector2.right * move * moveSpeed * Time.deltaTime);
 
         if (move > 0)
@@ -67,6 +78,28 @@ public class Player : MonoBehaviour
             pos.x = screenWidth;
 
         transform.position = pos;
+    }
+
+    // Mobile buttons ke liye public functions
+    public void MoveLeft()
+    {
+        mobileMoveInput = -1f;
+    }
+
+    public void MoveRight()
+    {
+        mobileMoveInput = 1f;
+    }
+
+    public void StopMoving()
+    {
+        mobileMoveInput = 0f;
+    }
+
+    // Restart button ya UI se call karne ke liye function
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     void SpawnEnemy()
@@ -101,7 +134,6 @@ public class Player : MonoBehaviour
 
             CancelInvoke(nameof(SpawnEnemy));
 
-            // Yahan CoinSpawner ko rokne ke liye Singleton instance ka use kiya hai
             if (CoinSpawner.Instance != null)
             {
                 CoinSpawner.Instance.StopSpawning();
@@ -116,6 +148,9 @@ public class Player : MonoBehaviour
 
             if (gameOverText != null)
                 gameOverText.gameObject.SetActive(true);
+
+            if (restartButton != null)
+                restartButton.SetActive(true); // Game over hone par restart button show ho jayega
         }
 
         if (collision.CompareTag("Coin"))
