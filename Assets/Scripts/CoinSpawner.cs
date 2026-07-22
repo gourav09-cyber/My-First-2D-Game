@@ -2,24 +2,33 @@ using UnityEngine;
 
 public class CoinSpawner : MonoBehaviour
 {
-    public GameObject coinPrefab;
-    public float spawnRate = 3f; // Har 3 second mein 1 coin aayega
-    public float minX = -8f; // Screen ka left kinara
-    public float maxX = 8f;  // Screen ka right kinara
+    public static CoinSpawner Instance;
 
-    void Start()
+    public GameObject coinPrefab;
+    public float spawnRate = 1f;
+    public float minX = -8f;
+    public float maxX = 8f;
+
+    void Awake()
     {
-        // Game start hote hi coin tapkana shuru karo
+        Instance = this;
+    }
+
+    void OnEnable()
+    {
+        // Scene restart hone par spawning dobara start ho jayegi
         InvokeRepeating(nameof(SpawnCoin), 2f, spawnRate);
+    }
+
+    public void StopSpawning()
+    {
+        CancelInvoke(nameof(SpawnCoin));
     }
 
     void SpawnCoin()
     {
-        // Random X position decide karo
         float randomX = Random.Range(minX, maxX);
-        Vector2 spawnPosition = new Vector2(randomX, 6f); // 6f matlab screen ke upar (aasman mein)
-
-        // Coin ko scene mein paida karo
+        Vector2 spawnPosition = new Vector2(randomX, 6f);
         Instantiate(coinPrefab, spawnPosition, Quaternion.identity);
     }
 }

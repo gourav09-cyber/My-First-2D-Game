@@ -4,11 +4,9 @@ using TMPro;
 
 public class Player : MonoBehaviour
 {
-    // --- Naye Coin Variables ---
-    public TextMeshProUGUI coinTextUI; // Score dikhane ke liye UI
-    private int coinCount = 0;         // Coin ginnne ke liye
+    public TextMeshProUGUI coinTextUI;
+    private int coinCount = 0;         
 
-    // --- Purane Variables ---
     public float moveSpeed = 5f;
     public AudioClip hitSound; 
     public AudioSource audioSource; 
@@ -21,18 +19,19 @@ public class Player : MonoBehaviour
     public TextMeshProUGUI gameOverText; 
     private bool gameOver = false;
 
-    void Start()
-    {
-        sr = GetComponent<SpriteRenderer>();
-        InvokeRepeating(nameof(SpawnEnemy), 1f, spawnInterval);
+   void Start()
+{
+    gameOver = false; // Yeh ensure karega ki restart hote hi game over state reset ho jaye
+    
+    sr = GetComponent<SpriteRenderer>();
+    InvokeRepeating(nameof(SpawnEnemy), 1f, spawnInterval);
 
-        if (gameOverText != null)
-            gameOverText.gameObject.SetActive(false);
-            
-        // Start me coin text ko 0 set kar dete hain (agar UI link kiya hoga)
-        if (coinTextUI != null)
-            coinTextUI.text = "Coins: 0";
-    }
+    if (gameOverText != null)
+        gameOverText.gameObject.SetActive(false);
+        
+    if (coinTextUI != null)
+        coinTextUI.text = "Coins: 0";
+}
 
     void Update()
     {
@@ -92,7 +91,6 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // --- ENEMY (METEOR) WALA LOGIC ---
         if (collision.CompareTag("Enemy"))
         {
             if (audioSource != null && hitSound != null)
@@ -101,13 +99,14 @@ public class Player : MonoBehaviour
             }
             gameOver = true;
 
-            // Meteors ko aana roko
             CancelInvoke(nameof(SpawnEnemy));
 
-            // NAYI LINE: Coins ko aana roko
-            FindFirstObjectByType<CoinSpawner>()?.CancelInvoke("SpawnCoin");
+            // Yahan CoinSpawner ko rokne ke liye Singleton instance ka use kiya hai
+            if (CoinSpawner.Instance != null)
+            {
+                CoinSpawner.Instance.StopSpawning();
+            }
 
-            // Jo meteors pehle se screen par hain, unko roko
             foreach (var m in FindObjectsByType<EnemyMover>(FindObjectsInactive.Exclude))
             {
                 m.enabled = false;
@@ -119,16 +118,12 @@ public class Player : MonoBehaviour
                 gameOverText.gameObject.SetActive(true);
         }
 
-        // --- NAYA COIN WALA LOGIC ---
         if (collision.CompareTag("Coin"))
         {
-            // 1. Coin ko gayab karo
             Destroy(collision.gameObject); 
             
-            // 2. Coin ka number badhao
             coinCount++; 
             
-            // 3. UI par naya number dikhao
             if (coinTextUI != null)
             {
                 coinTextUI.text = "Coins: " + coinCount;
